@@ -93,8 +93,7 @@ func (d *MetadataDecoder) BuildMetadata(packagename string, metadata *Metadata) 
 	wg.Done()
 }
 
-func (d *MetadataDecoder) BuildModule(root bool, metadata Metadata) models.Module {
-	var module models.Module
+func (d *MetadataDecoder) BuildModule(root bool, metadata Metadata, module *models.Module) {
 	module.Version = metadata.Version
 	module.Name = metadata.Name
 	module.Path = metadata.ProjectURL
@@ -117,26 +116,12 @@ func (d *MetadataDecoder) BuildModule(root bool, metadata Metadata) models.Modul
 	module.PackageURL = metadata.PackageURL
 	module.CheckSum = GetPackageChecksum(metadata.Name, metadata.PackageJsonURL, metadata.WheelPath)
 
-	/*
-		licensePkg, err := helper.GetLicenses(metadata.DistInfoPath)
-		if err == nil {
-			module.LicenseDeclared = helper.BuildLicenseDeclared(licensePkg.ID)
-			module.LicenseConcluded = helper.BuildLicenseConcluded(licensePkg.ID)
-			module.Copyright = helper.GetCopyright(licensePkg.ExtractedText)
-			module.CommentsLicense = licensePkg.Comments
-			if !helper.LicenseSPDXExists(licensePkg.ID) {
-				licensePkg.ID = fmt.Sprintf("LicenseRef-%s", licensePkg.ID)
-			}
-		}
-	*/
 	module.PackageHomePage = metadata.HomePage
 	module.OtherLicense = []*models.License{} // How to get this
 	module.PackageComment = metadata.Description
 
 	module.Root = root
 	module.Modules = map[string]*models.Module{}
-
-	return module
 }
 
 func (d *MetadataDecoder) BuildModuleLicense(distinfopath string, module *models.Module) {
@@ -175,9 +160,10 @@ func (d *MetadataDecoder) ConvertMetadataToModules(isRoot bool, pkgs []Packages,
 
 	metainfo, metaList := d.GetMetadataList(pkgs)
 	for _, metadata := range metaList {
-		mod := d.BuildModule(isRoot, *metadata)
+		mod := new(models.Module)
+		d.BuildModule(isRoot, *metadata, mod)
 		metadatamap[strings.ToLower(mod.Name)] = metadata
-		asyncmodules = append(asyncmodules, &mod)
+		asyncmodules = append(asyncmodules, mod)
 	}
 
 	for _, mod := range asyncmodules {
