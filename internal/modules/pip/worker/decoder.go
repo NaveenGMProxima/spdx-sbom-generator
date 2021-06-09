@@ -171,21 +171,25 @@ func (d *MetadataDecoder) GetMetadataList(pkgs []Packages) (map[string]*Metadata
 
 func (d *MetadataDecoder) ConvertMetadataToModules(isRoot bool, pkgs []Packages, modules *[]models.Module) map[string]*Metadata {
 	metadatamap := make(map[string]*Metadata, len(pkgs))
+	asyncmodules := make([]*models.Module, 0)
 
 	metainfo, metaList := d.GetMetadataList(pkgs)
 	for _, metadata := range metaList {
 		mod := d.BuildModule(isRoot, *metadata)
 		metadatamap[strings.ToLower(mod.Name)] = metadata
-		*modules = append(*modules, mod)
+		asyncmodules = append(asyncmodules, &mod)
 	}
 
-	for i, _ := range *modules {
-		// Get reference to the module from the array, since we want the change to happen there
-		mod := &(*modules)[i]
+	for _, mod := range asyncmodules {
 		metadata, ok := metadatamap[strings.ToLower(mod.Name)]
 		if ok {
 			d.BuildModuleLicense(metadata.DistInfoPath, mod)
 		}
+	}
+
+	// Copy back all module data processed in async mode back to module list
+	for _, mod := range asyncmodules {
+		*modules = append(*modules, *mod)
 	}
 
 	fmt.Println("modules :")
