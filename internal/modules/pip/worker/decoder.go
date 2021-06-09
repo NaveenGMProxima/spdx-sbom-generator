@@ -149,6 +149,20 @@ func (d *MetadataDecoder) GetMetadataList(pkgs []Packages) (map[string]Metadata,
 
 func (d *MetadataDecoder) ConvertMetadataToModules(isRoot bool, pkgs []Packages, modules *[]models.Module) map[string]Metadata {
 	metainfo, metaList := d.GetMetadataList(pkgs)
+	fmt.Println("metainfo :")
+	for i, pkg := range pkgs {
+		fmt.Println("Index :", i)
+		fmt.Println("Key :", strings.ToLower(pkg.Name))
+		fmt.Println("Value :", metainfo[strings.ToLower(pkg.Name)])
+	}
+
+	fmt.Println(" -------------------- ")
+	fmt.Println("metaList :")
+	for k, v := range metaList {
+		fmt.Println("Key :", k)
+		fmt.Println("Value :", v)
+	}
+	fmt.Println(" ==================== ")
 	for _, metadata := range metaList {
 		mod := d.BuildModule(isRoot, metadata)
 		*modules = append(*modules, mod)
