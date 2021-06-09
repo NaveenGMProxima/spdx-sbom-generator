@@ -117,7 +117,30 @@ func (d *MetadataDecoder) BuildModule(root bool, metadata Metadata) models.Modul
 	module.PackageURL = metadata.PackageURL
 	module.CheckSum = GetPackageChecksum(metadata.Name, metadata.PackageJsonURL, metadata.WheelPath)
 
-	licensePkg, err := helper.GetLicenses(metadata.DistInfoPath)
+	/*
+		licensePkg, err := helper.GetLicenses(metadata.DistInfoPath)
+		if err == nil {
+			module.LicenseDeclared = helper.BuildLicenseDeclared(licensePkg.ID)
+			module.LicenseConcluded = helper.BuildLicenseConcluded(licensePkg.ID)
+			module.Copyright = helper.GetCopyright(licensePkg.ExtractedText)
+			module.CommentsLicense = licensePkg.Comments
+			if !helper.LicenseSPDXExists(licensePkg.ID) {
+				licensePkg.ID = fmt.Sprintf("LicenseRef-%s", licensePkg.ID)
+			}
+		}
+	*/
+	module.PackageHomePage = metadata.HomePage
+	module.OtherLicense = []*models.License{} // How to get this
+	module.PackageComment = metadata.Description
+
+	module.Root = root
+	module.Modules = map[string]*models.Module{}
+
+	return module
+}
+
+func (d *MetadataDecoder) BuildModuleLicense(distinfopath string, module *models.Module) {
+	licensePkg, err := helper.GetLicenses(distinfopath)
 	if err == nil {
 		module.LicenseDeclared = helper.BuildLicenseDeclared(licensePkg.ID)
 		module.LicenseConcluded = helper.BuildLicenseConcluded(licensePkg.ID)
@@ -127,14 +150,6 @@ func (d *MetadataDecoder) BuildModule(root bool, metadata Metadata) models.Modul
 			licensePkg.ID = fmt.Sprintf("LicenseRef-%s", licensePkg.ID)
 		}
 	}
-	module.PackageHomePage = metadata.HomePage
-	module.OtherLicense = []*models.License{} // How to get this
-	module.PackageComment = metadata.Description
-
-	module.Root = root
-	module.Modules = map[string]*models.Module{}
-
-	return module
 }
 
 func (d *MetadataDecoder) GetMetadataList(pkgs []Packages) (map[string]*Metadata, []*Metadata) {
@@ -155,11 +170,24 @@ func (d *MetadataDecoder) GetMetadataList(pkgs []Packages) (map[string]*Metadata
 }
 
 func (d *MetadataDecoder) ConvertMetadataToModules(isRoot bool, pkgs []Packages, modules *[]models.Module) map[string]*Metadata {
+	metadatamap := make(map[string]*Metadata, len(pkgs))
+
 	metainfo, metaList := d.GetMetadataList(pkgs)
 	for _, metadata := range metaList {
 		mod := d.BuildModule(isRoot, *metadata)
+		metadatamap[strings.ToLower(mod.Name)] = metadata
 		*modules = append(*modules, mod)
 	}
+
+	for i, _ := range *modules {
+		// Get reference to the module from the array, since we want the change to happen there
+		mod := &(*modules)[i]
+		metadata, ok := metadatamap[strings.ToLower(mod.Name)]
+		if ok {
+			d.BuildModuleLicense(metadata.DistInfoPath, mod)
+		}
+	}
+
 	fmt.Println("modules :")
 	for k, v := range *modules {
 		fmt.Println("Key :", k)
