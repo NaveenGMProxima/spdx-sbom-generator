@@ -7,6 +7,7 @@ import (
 	"spdx-sbom-generator/internal/helper"
 	"spdx-sbom-generator/internal/models"
 	"strings"
+	"sync"
 )
 
 var httpReplacer = strings.NewReplacer("https://", "", "http://", "")
@@ -16,6 +17,8 @@ type GetPackageDetailsFunc = func(PackageName string) (string, error)
 type MetadataDecoder struct {
 	getPkgDetailsFunc GetPackageDetailsFunc
 }
+
+var wg = sync.WaitGroup{}
 
 // New Metadata Decoder ...
 func NewMetadataDecoder(pkgDetailsFunc GetPackageDetailsFunc) *MetadataDecoder {
@@ -87,6 +90,7 @@ func (d *MetadataDecoder) BuildMetadata(packagename string, metadata *Metadata) 
 	metadata.LicensePath = BuildLicenseUrl(metadata.DistInfoPath)
 	metadata.MetadataPath = BuildMetadataPath(metadata.DistInfoPath)
 	metadata.WheelPath = BuildWheelPath(metadata.DistInfoPath)
+	wg.Done()
 }
 
 func (d *MetadataDecoder) BuildModule(root bool, metadata Metadata) models.Module {
@@ -140,10 +144,13 @@ func (d *MetadataDecoder) GetMetadataList(pkgs []Packages) (map[string]*Metadata
 	for _, pkg := range pkgs {
 		metadata := new(Metadata)
 
-		d.BuildMetadata(pkg.Name, metadata)
+		wg.Add(1)
+		go d.BuildMetadata(pkg.Name, metadata)
+
 		metaList = append(metaList, metadata)
 		metainfo[strings.ToLower(pkg.Name)] = metadata
 	}
+	wg.Wait()
 	return metainfo, metaList
 }
 
