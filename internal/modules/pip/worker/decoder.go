@@ -160,6 +160,18 @@ func (d *MetadataDecoder) ConvertMetadataToModules(isRoot bool, pkgs []Packages,
 		mod := d.BuildModule(isRoot, *metadata)
 		*modules = append(*modules, mod)
 	}
+	fmt.Println("modules :")
+	for k, v := range *modules {
+		fmt.Println("Key :", k)
+		fmt.Println("Value :", v)
+		fmt.Println("LicenseDeclared :", v.LicenseDeclared)
+		fmt.Println("LicenseConcluded :", v.LicenseConcluded)
+		fmt.Println("Copyright :", v.Copyright)
+		fmt.Println("CommentsLicense :", v.CommentsLicense)
+		fmt.Println(" -------------------- ")
+	}
+	fmt.Println(" ==================== ")
+
 	return metainfo
 }
 
