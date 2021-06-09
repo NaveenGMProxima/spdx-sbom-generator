@@ -60,7 +60,7 @@ func (m *pipenv) IsValid(path string) bool {
 
 // Has Modules Installed ...
 func (m *pipenv) HasModulesInstalled(path string) error {
-	if err := m.buildCmd(ModulesCmd, m.basepath); err != nil {
+	if _, err := m.buildCmd(ModulesCmd, m.basepath); err != nil {
 		return err
 	}
 	result, err := m.command.Output()
@@ -73,7 +73,7 @@ func (m *pipenv) HasModulesInstalled(path string) error {
 
 // Get Version ...
 func (m *pipenv) GetVersion() (string, error) {
-	if err := m.buildCmd(VersionCmd, m.basepath); err != nil {
+	if _, err := m.buildCmd(VersionCmd, m.basepath); err != nil {
 		return "", err
 	}
 	version, err := m.command.Output()
@@ -126,10 +126,10 @@ func (m *pipenv) ListModulesWithDeps(path string) ([]models.Module, error) {
 	return modules, err
 }
 
-func (m *pipenv) buildCmd(cmd command, path string) error {
+func (m *pipenv) buildCmd(cmd command, path string) (*helper.Cmd, error) {
 	cmdArgs := cmd.Parse()
 	if cmdArgs[0] != cmdName {
-		return errNoPipCommand
+		return nil, errNoPipCommand
 	}
 
 	command := helper.NewCmd(helper.CmdOptions{
@@ -140,14 +140,14 @@ func (m *pipenv) buildCmd(cmd command, path string) error {
 
 	m.command = command
 
-	return command.Build()
+	return command, command.Build()
 }
 
 func (m *pipenv) GetPackageDetails(packageName string) (string, error) {
 	metatdataCmd := command(strings.ReplaceAll(string(MetadataCmd), placeholderPkgName, packageName))
 
-	m.buildCmd(metatdataCmd, m.basepath)
-	result, err := m.command.Output()
+	command, err := m.buildCmd(metatdataCmd, m.basepath)
+	result, err := command.Output()
 	if err != nil {
 		return "", err
 	}
@@ -156,7 +156,7 @@ func (m *pipenv) GetPackageDetails(packageName string) (string, error) {
 }
 
 func (m *pipenv) PushRootModuleToVenv() bool {
-	if err := m.buildCmd(InstallRootModuleCmd, m.basepath); err != nil {
+	if _, err := m.buildCmd(InstallRootModuleCmd, m.basepath); err != nil {
 		return false
 	}
 	result, err := m.command.Output()

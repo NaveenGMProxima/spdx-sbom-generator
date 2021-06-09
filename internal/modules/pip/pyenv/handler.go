@@ -67,7 +67,7 @@ func (m *pyenv) HasModulesInstalled(path string) error {
 	}
 	if runme {
 		dir := m.GetExecutableDir()
-		if err := m.buildCmd(ModulesCmd, dir); err != nil {
+		if _, err := m.buildCmd(ModulesCmd, dir); err != nil {
 			return err
 		}
 		result, err := m.command.Output()
@@ -81,7 +81,7 @@ func (m *pyenv) HasModulesInstalled(path string) error {
 
 // Get Version ...
 func (m *pyenv) GetVersion() (string, error) {
-	if err := m.buildCmd(VersionCmd, m.basepath); err != nil {
+	if _, err := m.buildCmd(VersionCmd, m.basepath); err != nil {
 		return "", err
 	}
 	version, err := m.command.Output()
@@ -134,10 +134,10 @@ func (m *pyenv) ListModulesWithDeps(path string) ([]models.Module, error) {
 	return modules, err
 }
 
-func (m *pyenv) buildCmd(cmd command, path string) error {
+func (m *pyenv) buildCmd(cmd command, path string) (*helper.Cmd, error) {
 	cmdArgs := cmd.Parse()
 	if !strings.Contains(cmdArgs[0], cmdName) {
-		return errNoPipCommand
+		return nil, errNoPipCommand
 	}
 
 	command := helper.NewCmd(helper.CmdOptions{
@@ -148,7 +148,7 @@ func (m *pyenv) buildCmd(cmd command, path string) error {
 
 	m.command = command
 
-	return command.Build()
+	return command, command.Build()
 }
 
 func (m *pyenv) GetExecutableDir() string {
@@ -162,8 +162,8 @@ func (m *pyenv) GetPackageDetails(packageName string) (string, error) {
 	metatdataCmd := command(strings.ReplaceAll(string(MetadataCmd), placeholderPkgName, packageName))
 	dir := m.GetExecutableDir()
 
-	m.buildCmd(metatdataCmd, dir)
-	result, err := m.command.Output()
+	command, err := m.buildCmd(metatdataCmd, dir)
+	result, err := command.Output()
 	if err != nil {
 		return "", err
 	}
@@ -173,7 +173,7 @@ func (m *pyenv) GetPackageDetails(packageName string) (string, error) {
 
 func (m *pyenv) PushRootModuleToVenv() bool {
 	dir := m.GetExecutableDir()
-	if err := m.buildCmd(InstallRootModuleCmd, dir); err != nil {
+	if _, err := m.buildCmd(InstallRootModuleCmd, dir); err != nil {
 		return false
 	}
 	result, err := m.command.Output()
