@@ -4,7 +4,9 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"os"
+	"time"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -72,6 +74,7 @@ func setupLogger() {
 }
 
 func generate(cmd *cobra.Command, args []string) {
+	startTime := time.Now()
 	log.Info("Starting to generate SPDX ...")
 	checkOpt := func(opt string) string {
 		cmdOpt, err := cmd.Flags().GetString(opt)
@@ -107,4 +110,10 @@ func generate(cmd *cobra.Command, args []string) {
 	}
 
 	handler.Complete()
+	endTime := time.Now()
+	timeTaken := endTime.Sub(startTime)
+	fmt.Println("Time taken to generate : ")
+	fmt.Println("\tMinutes :", timeTaken.Minutes())
+	fmt.Println("\tSeconds :", timeTaken.Seconds())
+	fmt.Println("\tMilliseconds :", timeTaken.Microseconds())
 }
