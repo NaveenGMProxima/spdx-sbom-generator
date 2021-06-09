@@ -65,16 +65,15 @@ func ParseMetadata(metadata *Metadata, packagedetails string) {
 	SetMetadataValues(metadata, pkgDataMap)
 }
 
-func (d *MetadataDecoder) BuildMetadata(packagename string) Metadata {
-	var metadata Metadata
+func (d *MetadataDecoder) BuildMetadata(packagename string, metadata *Metadata) {
 
 	metadatastr, err := d.getPkgDetailsFunc(packagename)
 	if err != nil {
 		// If there was error fetching package details, we are setting all members to NOASSERTION.
 		// Except for Package Name
-		SetMetadataToNoAssertion(&metadata, packagename)
+		SetMetadataToNoAssertion(metadata, packagename)
 	}
-	ParseMetadata(&metadata, metadatastr)
+	ParseMetadata(metadata, metadatastr)
 
 	metadata.ProjectURL = BuildProjectUrl(metadata.Name, metadata.Version)
 	metadata.PackageURL = BuildPackageUrl(metadata.Name, metadata.Version)
@@ -88,7 +87,6 @@ func (d *MetadataDecoder) BuildMetadata(packagename string) Metadata {
 	metadata.LicensePath = BuildLicenseUrl(metadata.DistInfoPath)
 	metadata.MetadataPath = BuildMetadataPath(metadata.DistInfoPath)
 	metadata.WheelPath = BuildWheelPath(metadata.DistInfoPath)
-	return metadata
 }
 
 func (d *MetadataDecoder) BuildModule(root bool, metadata Metadata) models.Module {
@@ -135,42 +133,44 @@ func (d *MetadataDecoder) BuildModule(root bool, metadata Metadata) models.Modul
 	return module
 }
 
-func (d *MetadataDecoder) GetMetadataList(pkgs []Packages) (map[string]Metadata, []Metadata) {
-	metainfo := map[string]Metadata{}
-	metaList := []Metadata{}
+func (d *MetadataDecoder) GetMetadataList(pkgs []Packages) (map[string]*Metadata, []*Metadata) {
+	metainfo := map[string]*Metadata{}
+	metaList := []*Metadata{}
 
 	for _, pkg := range pkgs {
-		metadata := d.BuildMetadata(pkg.Name)
+		metadata := new(Metadata)
+
+		d.BuildMetadata(pkg.Name, metadata)
 		metaList = append(metaList, metadata)
 		metainfo[strings.ToLower(pkg.Name)] = metadata
 	}
 	return metainfo, metaList
 }
 
-func (d *MetadataDecoder) ConvertMetadataToModules(isRoot bool, pkgs []Packages, modules *[]models.Module) map[string]Metadata {
+func (d *MetadataDecoder) ConvertMetadataToModules(isRoot bool, pkgs []Packages, modules *[]models.Module) map[string]*Metadata {
 	metainfo, metaList := d.GetMetadataList(pkgs)
 	fmt.Println("metainfo :")
 	for i, pkg := range pkgs {
 		fmt.Println("Index :", i)
 		fmt.Println("Key :", strings.ToLower(pkg.Name))
-		fmt.Println("Value :", metainfo[strings.ToLower(pkg.Name)])
+		fmt.Println("Value :", *(metainfo[strings.ToLower(pkg.Name)]))
 	}
 
 	fmt.Println(" -------------------- ")
 	fmt.Println("metaList :")
 	for k, v := range metaList {
 		fmt.Println("Key :", k)
-		fmt.Println("Value :", v)
+		fmt.Println("Value :", *v)
 	}
 	fmt.Println(" ==================== ")
 	for _, metadata := range metaList {
-		mod := d.BuildModule(isRoot, metadata)
+		mod := d.BuildModule(isRoot, *metadata)
 		*modules = append(*modules, mod)
 	}
 	return metainfo
 }
 
-func BuildDependencyGraph(modules *[]models.Module, pkgsMetadata *map[string]Metadata) error {
+func BuildDependencyGraph(modules *[]models.Module, pkgsMetadata *map[string]*Metadata) error {
 	moduleMap := map[string]models.Module{}
 
 	for _, module := range *modules {
@@ -204,7 +204,7 @@ func BuildDependencyGraph(modules *[]models.Module, pkgsMetadata *map[string]Met
 	return nil
 }
 
-func MergeMetadataMap(root map[string]Metadata, nonroot map[string]Metadata) map[string]Metadata {
+func MergeMetadataMap(root map[string]*Metadata, nonroot map[string]*Metadata) map[string]*Metadata {
 	for key, value := range root {
 		nonroot[key] = value
 	}

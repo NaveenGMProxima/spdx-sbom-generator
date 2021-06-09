@@ -28,7 +28,7 @@ type pipenv struct {
 	command    *helper.Cmd
 	basepath   string
 	pkgs       []worker.Packages
-	metainfo   map[string]worker.Metadata
+	metainfo   map[string]*worker.Metadata
 }
 
 // New ...
