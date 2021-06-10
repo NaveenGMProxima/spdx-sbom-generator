@@ -122,6 +122,8 @@ func (d *MetadataDecoder) BuildModule(root bool, metadata Metadata, module *mode
 
 	module.Root = root
 	module.Modules = map[string]*models.Module{}
+
+	wg.Done()
 }
 
 func (d *MetadataDecoder) BuildModuleLicense(distinfopath string, module *models.Module) {
@@ -159,23 +161,29 @@ func (d *MetadataDecoder) ConvertMetadataToModules(isRoot bool, pkgs []Packages,
 	asyncmodules := make([]*models.Module, 0)
 
 	metainfo, metaList := d.GetMetadataList(pkgs)
-	for _, metadata := range metaList {
+	for i, metadata := range metaList {
 		mod := new(models.Module)
-		d.BuildModule(isRoot, *metadata, mod)
+
+		wg.Add(1)
+		go d.BuildModule(isRoot, *metadata, mod)
+
 		metadatamap[strings.ToLower(mod.Name)] = metadata
 		asyncmodules = append(asyncmodules, mod)
 	}
-
-	for _, mod := range asyncmodules {
-		metadata, ok := metadatamap[strings.ToLower(mod.Name)]
-		if ok {
-			d.BuildModuleLicense(metadata.DistInfoPath, mod)
-		}
-	}
+	wg.Wait()
 
 	// Copy back all module data processed in async mode back to module list
 	for _, mod := range asyncmodules {
 		*modules = append(*modules, *mod)
+	}
+
+	for i, _ := range *modules {
+		// Get refenence to module in the array, as License evaluation needs to be
+		mod := &(*modules)[i]
+		metadata, ok := metadatamap[strings.ToLower(mod.Name)]
+		if ok {
+			d.BuildModuleLicense(metadata.DistInfoPath, mod)
+		}
 	}
 
 	fmt.Println("modules :")
