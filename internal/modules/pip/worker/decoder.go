@@ -67,7 +67,7 @@ func ParseMetadata(metadata *Metadata, packagedetails string) {
 	SetMetadataValues(metadata, pkgDataMap)
 }
 
-func (d *MetadataDecoder) BuildMetadata(pkg Packages) Metadata {
+func (d *MetadataDecoder) BuildMetadata_OLD(pkg Packages) Metadata {
 	var metadata Metadata
 
 	metadatastr, err := d.getPkgDetailsFunc(pkg.Name)
@@ -137,12 +137,12 @@ func (d *MetadataDecoder) BuildModule(metadata Metadata) models.Module {
 	return module
 }
 
-func (d *MetadataDecoder) GetMetadataList(pkgs []Packages) (map[string]Metadata, []Metadata) {
+func (d *MetadataDecoder) GetMetadataList_OLD(pkgs []Packages) (map[string]Metadata, []Metadata) {
 	metainfo := map[string]Metadata{}
 	metaList := []Metadata{}
 
 	for _, pkg := range pkgs {
-		metadata := d.BuildMetadata(pkg)
+		metadata := d.BuildMetadata_OLD(pkg)
 		metaList = append(metaList, metadata)
 		metainfo[strings.ToLower(pkg.Name)] = metadata
 	}
@@ -150,7 +150,23 @@ func (d *MetadataDecoder) GetMetadataList(pkgs []Packages) (map[string]Metadata,
 }
 
 func (d *MetadataDecoder) ConvertMetadataToModules(pkgs []Packages, modules *[]models.Module) map[string]Metadata {
-	metainfo, metaList := d.GetMetadataList(pkgs)
+	metainfo, metaList := d.GetMetadataList_OLD(pkgs)
+
+	fmt.Println("metainfo :")
+	for i, pkg := range pkgs {
+		fmt.Println("Index :", i)
+		fmt.Println("Key :", strings.ToLower(pkg.Name))
+		fmt.Println("Value :", metainfo[strings.ToLower(pkg.Name)])
+	}
+
+	fmt.Println(" -------------------- ")
+	fmt.Println("metaList :")
+	for k, v := range metaList {
+		fmt.Println("Key :", k)
+		fmt.Println("Value :", v)
+	}
+	fmt.Println(" ==================== ")
+
 	for _, metadata := range metaList {
 		mod := d.BuildModule(metadata)
 		*modules = append(*modules, mod)
