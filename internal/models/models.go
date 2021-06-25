@@ -9,6 +9,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"hash"
+	"strings"
 )
 
 // IPlugin ...
@@ -70,7 +71,16 @@ func (s *SupplierContact) Get() string {
 		s.Type = Organization
 	}
 
-	return fmt.Sprintf("%s: %s", s.Type, s.Name)
+	pkgSupplier := fmt.Sprintf("%s: %s", s.Type, s.Name)
+	if !isEmptyEmail(s) {
+		pkgSupplier += fmt.Sprintf(" (%s)", s.Email)
+	}
+
+	return pkgSupplier
+}
+
+func isEmptyEmail(s *SupplierContact) bool {
+	return (len(s.Email) == 0) || (strings.Compare(strings.ToLower(s.Email), "none") == 0)
 }
 
 // TypeContact ...

@@ -4,6 +4,7 @@ package pyenv
 
 import (
 	"errors"
+	"fmt"
 	"path/filepath"
 	"runtime"
 	"spdx-sbom-generator/internal/helper"
@@ -141,6 +142,15 @@ func (m *pyenv) ListModulesWithDeps(path string) ([]models.Module, error) {
 	m.GetRootModule(path)
 	if err := worker.BuildDependencyGraph(&m.allModules, &m.metainfo); err != nil {
 		return nil, err
+	}
+
+	for _, mod := range modules {
+		fmt.Println("=========== ", mod.Name, " ===========")
+		fmt.Println("mod.Name :", mod.Name)
+		fmt.Println("mod.Version :", mod.Version)
+		fmt.Println("mod.Supplier :", mod.Supplier)
+		fmt.Println("mod.Supplier.Get() :", mod.Supplier.Get())
+		fmt.Println("mod.PackageDownloadLocation :", mod.PackageDownloadLocation)
 	}
 	return modules, err
 }

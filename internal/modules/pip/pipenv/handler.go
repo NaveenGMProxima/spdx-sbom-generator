@@ -4,6 +4,7 @@ package pipenv
 
 import (
 	"errors"
+	"fmt"
 	"path/filepath"
 	"spdx-sbom-generator/internal/helper"
 	"spdx-sbom-generator/internal/models"
@@ -126,6 +127,16 @@ func (m *pipenv) ListModulesWithDeps(path string) ([]models.Module, error) {
 	if err := worker.BuildDependencyGraph(&m.allModules, &m.metainfo); err != nil {
 		return nil, err
 	}
+
+	for _, mod := range modules {
+		fmt.Println("=========== ", mod.Name, " ===========")
+		fmt.Println("mod.Name :", mod.Name)
+		fmt.Println("mod.Version :", mod.Version)
+		fmt.Println("mod.Supplier :", mod.Supplier)
+		fmt.Println("mod.Supplier.Get() :", mod.Supplier.Get())
+		fmt.Println("mod.PackageDownloadLocation :", mod.PackageDownloadLocation)
+	}
+
 	return modules, err
 }
 
